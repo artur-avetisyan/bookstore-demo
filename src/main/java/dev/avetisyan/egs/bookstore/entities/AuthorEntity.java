@@ -10,7 +10,7 @@ public class AuthorEntity {
     private int id;
     private String fullName;
     private Date birthDate;
-    private boolean isApproved;
+    private Boolean isApproved;
 
     @Id
     @Column(name = "id")
@@ -44,13 +44,13 @@ public class AuthorEntity {
     }
 
     @Basic
-    @Column(name = "is_approved")
-    public boolean isApproved() {
+    @Column(name = "is_approved", nullable = false)
+    public Boolean getIsApproved() {
         return isApproved;
     }
 
-    public void setApproved(boolean approved) {
-        isApproved = approved;
+    public void setIsApproved(Boolean isApproved) {
+        this.isApproved = isApproved;
     }
 
     @Override
