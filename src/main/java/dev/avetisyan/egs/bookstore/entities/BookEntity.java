@@ -2,7 +2,6 @@ package dev.avetisyan.egs.bookstore.entities;
 
 import javax.persistence.*;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
@@ -14,9 +13,11 @@ public class BookEntity {
     private Integer authorId;
     private double price;
     private String description;
-    private boolean isApproved;
+    private Boolean isApproved;
     private boolean isDeleted;
-    private long creatorId;
+    private Long creatorId;
+
+    private AuthorEntity author;
 
     @Id
     @Column(name = "id")
@@ -80,13 +81,13 @@ public class BookEntity {
     }
 
     @Basic
-    @Column(name = "is_approved")
-    public boolean isApproved() {
+    @Column(name = "is_approved", nullable = false)
+    public Boolean getIsApproved() {
         return isApproved;
     }
 
-    public void setApproved(boolean approved) {
-        isApproved = approved;
+    public void setIsApproved(Boolean isApproved) {
+        this.isApproved = isApproved;
     }
 
     @Basic
@@ -100,13 +101,23 @@ public class BookEntity {
     }
 
     @Basic
-    @Column(name = "creator_id")
-    public long getCreatorId() {
+    @Column(name = "creator_id", nullable = false)
+    public Long getCreatorId() {
         return creatorId;
     }
 
-    public void setCreatorId(long creatorId) {
+    public void setCreatorId(Long creatorId) {
         this.creatorId = creatorId;
+    }
+
+    @ManyToOne(targetEntity = AuthorEntity.class)
+    @JoinColumn(name = "author_id", referencedColumnName = "id", insertable = false, updatable = false)
+    public AuthorEntity getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(AuthorEntity author) {
+        this.author = author;
     }
 
     @Override
