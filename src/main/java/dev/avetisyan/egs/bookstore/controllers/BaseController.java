@@ -39,7 +39,7 @@ public abstract class BaseController {
 
         if (response.getErrors().stream().
                 anyMatch(e -> e.getErrorCode() == ErrorCode.ERR_DUP || e.getErrorCode() == ErrorCode.ERR_NA
-                        || e.getErrorCode() == ErrorCode.ERR_LE))
+                        || e.getErrorCode() == ErrorCode.ERR_LE || e.getErrorCode() == ErrorCode.ERR_DM))
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 
         if (response.getErrors().stream().anyMatch(e -> e.getErrorCode() == ErrorCode.ERR_AD))

@@ -1,10 +1,13 @@
 package dev.avetisyan.egs.bookstore.controllers;
 
 import dev.avetisyan.egs.bookstore.dtos.request.BookRequestDto;
+import dev.avetisyan.egs.bookstore.dtos.request.CommentRequestDto;
 import dev.avetisyan.egs.bookstore.dtos.request.filters.BookFilter;
 import dev.avetisyan.egs.bookstore.dtos.request.general.PageCriteria;
 import dev.avetisyan.egs.bookstore.dtos.request.general.SortCriteria;
+import dev.avetisyan.egs.bookstore.dtos.response.BookResponseDto;
 import dev.avetisyan.egs.bookstore.dtos.response.general.ErrorCode;
+import dev.avetisyan.egs.bookstore.dtos.response.general.ErrorDto;
 import dev.avetisyan.egs.bookstore.dtos.response.general.ResponseDto;
 import dev.avetisyan.egs.bookstore.services.IBookService;
 import dev.avetisyan.egs.bookstore.services.ICommentService;
@@ -32,10 +35,12 @@ public class BookController extends BaseController {
             Stream.of("name", "publishDate").collect(Collectors.toUnmodifiableSet());
 
     private final IBookService bookService;
+    private final ICommentService commentService;
 
     @Autowired
-    public BookController(IBookService bookService) {
+    public BookController(IBookService bookService, ICommentService commentService) {
         this.bookService = bookService;
+        this.commentService = commentService;
     }
 
     @PostMapping
@@ -130,6 +135,93 @@ public class BookController extends BaseController {
         // TODO: pass the current user instead of 2 params?
         ResponseDto result = bookService.delete(id, userId, isAdmin);
 
+        return generateResponse(result);
+    }
+
+    @PostMapping("/{bookId}/comments")
+    @ApiOperation(value = "Add a comment on a book", notes = "Comments can be added to any approved book.")
+    public ResponseEntity<ResponseDto> addComment(@PathVariable long bookId,
+                                                  @Valid @RequestBody CommentRequestDto body,
+                                                  BindingResult bindingResult) {
+
+        // TODO: see if we can extract a method
+        ResponseEntity<ResponseDto> bindingErrors = getBindingErrorsIfExist(
+                bindingResult, Map.of("text", ErrorCode.ERR_LE));
+        if (bindingErrors != null) return bindingErrors;
+
+        // FIXME: get user from session
+        boolean isAdmin = true;
+        long userId = 1;
+
+        ResponseDto bookResult = bookService.findById(bookId, userId, isAdmin);
+        if (bookResult.getErrors() != null) {
+            return generateErrorResponse(bookResult);
+        }
+
+        if (bookResult.getData() instanceof BookResponseDto &&
+                !((BookResponseDto) bookResult.getData()).isApproved()) {
+
+            return generateErrorResponse(ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD,
+                    "Comments can be added only to the approved books.")));
+        }
+
+        ResponseDto result = commentService.create(bookId, body, userId, isAdmin);
+        return generateCreatedResponse(result);
+    }
+
+    @PutMapping("/{bookId}/comments/{commentId}")
+    @ApiOperation(value = "Update a comment", notes = "Each user can update only his/her comments.")
+    public ResponseEntity<ResponseDto> updateComment(@PathVariable long bookId, @PathVariable long commentId,
+                                                     @Valid @RequestBody CommentRequestDto body,
+                                                     BindingResult bindingResult) {
+
+        ResponseEntity<ResponseDto> bindingErrors = getBindingErrorsIfExist(
+                bindingResult, Map.of("text", ErrorCode.ERR_LE));
+        if (bindingErrors != null) return bindingErrors;
+
+        // FIXME: get user from session
+        boolean isAdmin = true;
+        long userId = 1;
+
+        ResponseDto bookResult = bookService.findById(bookId, userId, isAdmin);
+        if (bookResult.getErrors() != null) {
+            return generateErrorResponse(bookResult);
+        }
+
+        ResponseDto result = commentService.update(bookId, commentId, body, userId);
+        return generateCreatedResponse(result);
+    }
+
+    @GetMapping("/{bookId}/comments")
+    @ApiOperation(value = "Get all comment on a book", notes = "Get all comments of the specified book.")
+    public ResponseEntity<ResponseDto> getBooks(@PathVariable long bookId, PageCriteria pageCriteria) {
+        // FIXME: get user from session
+        boolean isAdmin = true;
+        long userId = 1;
+
+        ResponseDto bookResult = bookService.findById(bookId, userId, isAdmin);
+        if (bookResult.getErrors() != null) {
+            return generateErrorResponse(bookResult);
+        }
+
+        ResponseDto result = commentService.getComments(bookId, pageCriteria);
+        return generateResponse(result);
+    }
+
+    @DeleteMapping("/{bookId}/comments/{commentId}")
+    @ApiOperation(value = "Delete a comment", notes = "Non-admin users can only delete " +
+            "their own comments, whereas admins can delete all comments.")
+    public ResponseEntity<ResponseDto> deleteBook(@PathVariable long bookId, @PathVariable long commentId) {
+        // FIXME: get the user from the current session
+        boolean isAdmin = true;
+        long userId = 1;
+        ResponseDto bookResult = bookService.findById(bookId, userId, isAdmin);
+        if (bookResult.getErrors() != null) {
+            return generateErrorResponse(bookResult);
+        }
+
+        // TODO: pass the current user instead of 2 params?
+        ResponseDto result = commentService.delete(bookId, commentId, userId, isAdmin);
         return generateResponse(result);
     }
 }

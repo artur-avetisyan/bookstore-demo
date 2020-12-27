@@ -12,7 +12,8 @@ public enum ErrorCode implements Serializable {
     ERR_NF("Not found"),
     ERR_AD("Access denied"),
     ERR_LE("Length exceeded"),
-    ERR_NA("Not allowed");
+    ERR_NA("Not allowed"),
+    ERR_DM("Data mismatch");
 
     @Serial
     private static final long serialVersionUID = 1L;
