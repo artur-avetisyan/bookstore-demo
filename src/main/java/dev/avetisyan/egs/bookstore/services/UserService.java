@@ -12,12 +12,14 @@ import dev.avetisyan.egs.bookstore.repositories.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.exception.DataException;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
@@ -30,20 +32,22 @@ import java.util.stream.Collectors;
 public class UserService extends BaseService implements IUserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, ModelMapper mapper) {
+    public UserService(UserRepository userRepository, ModelMapper mapper, PasswordEncoder passwordEncoder) {
         super(mapper);
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public ResponseDto create(UserRequestDto body) {
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         UserEntity user = mapper.map(body, UserEntity.class);
         user.setCreatedDate(new Date(System.currentTimeMillis()));
         user.setRoleId(UserRole.USER.getId());
-        // TODO: bcrypt the password 64/4
-        user.setPassHash(body.getPassword());
+        user.setPassHash(passwordEncoder.encode(body.getPassword()));
 
         return tryToSaveUser(user);
     }
@@ -57,6 +61,7 @@ public class UserService extends BaseService implements IUserService {
         Page<UserEntity> userEntities = roleId == null ? userRepository.findAll(pageable) :
                 userRepository.findAllByRoleId(roleId, pageable);
 
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         List<UserResponseDto> users = userEntities.get().
                 map(e -> mapper.map(e, UserResponseDto.class)).
                 collect(Collectors.toCollection(ArrayList::new));
@@ -67,6 +72,7 @@ public class UserService extends BaseService implements IUserService {
     private ResponseDto tryToSaveUser(UserEntity user) {
         try {
             UserEntity saved = userRepository.save(user);
+            mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
             return ResponseDto.success(mapper.map(saved, UserResponseDto.class));
 
         } catch (DataIntegrityViolationException e) {

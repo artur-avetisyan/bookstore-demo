@@ -14,6 +14,8 @@ public class UserEntity {
     private short roleId;
     private String passHash;
 
+    private RoleEntity role;
+
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,6 +75,16 @@ public class UserEntity {
 
     public void setPassHash(String passHash) {
         this.passHash = passHash;
+    }
+
+    @ManyToOne(targetEntity = RoleEntity.class)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", insertable = false, updatable = false)
+    public RoleEntity getRole() {
+        return role;
+    }
+
+    public void setRole(RoleEntity role) {
+        this.role = role;
     }
 
     @Override
