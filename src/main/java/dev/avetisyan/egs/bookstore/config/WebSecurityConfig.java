@@ -5,6 +5,7 @@ import dev.avetisyan.egs.bookstore.auth.UserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -52,7 +53,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.
-                // In production code I'll consider providing csrf token,
+                // In the production code I'll consider providing csrf token,
                 // disabling csrf here for convenience
                 csrf().disable().
                 authorizeRequests().
@@ -67,6 +68,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 and().
                 logout().permitAll().
                 and().
-                exceptionHandling().accessDeniedPage("/403");
+                exceptionHandling().
+                accessDeniedHandler((request, response, accessDeniedException) ->
+                        response.setStatus(HttpStatus.FORBIDDEN.value()));
     }
 }
