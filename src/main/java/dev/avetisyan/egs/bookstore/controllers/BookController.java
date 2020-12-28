@@ -76,7 +76,6 @@ public class BookController extends BaseController {
         return generateResponse(result);
     }
 
-    // FIXME: add authorization
     @PatchMapping("/{id}/approval")
     @ApiOperation(value = "Approve a book",
             notes = "Only admin users have privilege to approve a book. Though not necessary, " +

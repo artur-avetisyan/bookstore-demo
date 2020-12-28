@@ -59,7 +59,6 @@ public class AuthorController extends BaseController {
         return generateCreatedResponse(result);
     }
 
-    // <TODO>: only admins can update author, add authorization
     @PutMapping("/{id}")
     @ApiOperation(value = "Update an author",
             notes = "Only admin users have privilege to update an author.")
@@ -74,7 +73,6 @@ public class AuthorController extends BaseController {
         return generateResponse(result);
     }
 
-    // TODO: only admins can approve an author, add authorization
     @PatchMapping("/{id}/approval")
     @ApiOperation(value = "Approve an author",
             notes = "Only admin users have privilege to approve an author. Though not necessary, " +

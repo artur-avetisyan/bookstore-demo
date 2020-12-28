@@ -41,7 +41,6 @@ public class UserController extends BaseController {
         return generateCreatedResponse(result);
     }
 
-    // TODO: authorize admin
     @GetMapping
     @ApiOperation(value = "Get users", notes = "Admins can get all users with pagination and filtered by role.")
     public ResponseEntity<ResponseDto> getUsers(@RequestParam(required = false) Short roleId,

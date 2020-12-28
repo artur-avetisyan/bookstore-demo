@@ -4,10 +4,12 @@ import dev.avetisyan.egs.bookstore.auth.UserDetailService;
 import dev.avetisyan.egs.bookstore.auth.UserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -43,19 +45,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
+    public void configure(WebSecurity web) {
+        web.ignoring().antMatchers(HttpMethod.POST, "/users");
+    }
+
+    @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.
-                // In production code I'll provide csrf token,
+                // In production code I'll consider providing csrf token,
                 // disabling csrf here for convenience
                 csrf().disable().
                 authorizeRequests().
-
-                // FIXME: fix ant matchers
-//                antMatchers("/").hasAnyAuthority(UserRole.ADMIN.getName(), UserRole.USER.getName()).
-//                antMatchers("/new").hasAnyAuthority(UserRole.ADMIN.getName(), UserRole.USER.getName()).
-//                antMatchers("/edit/**").hasAnyAuthority(UserRole.ADMIN.getName(), UserRole.USER.getName()).
-//                antMatchers("/delete/**").hasAuthority(UserRole.ADMIN.getName()).
-//                antMatchers("/users").permitAll().
+                // also can be done using annotations @PreAuthorize, @Secured or @RoleAllowed with additional config
+                antMatchers(HttpMethod.GET, "/users").hasAuthority(UserRole.ADMIN.getName()).
+                antMatchers(HttpMethod.PUT, "/authors/*").hasAuthority(UserRole.ADMIN.getName()).
+                antMatchers(HttpMethod.PATCH, "/authors/*/approval").hasAuthority(UserRole.ADMIN.getName()).
+                antMatchers(HttpMethod.PATCH, "/books/*/approval").hasAuthority(UserRole.ADMIN.getName()).
                 anyRequest().authenticated().
                 and().
                 formLogin().permitAll().
