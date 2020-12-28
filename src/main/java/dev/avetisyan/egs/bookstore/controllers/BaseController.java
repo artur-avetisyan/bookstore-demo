@@ -1,16 +1,21 @@
 package dev.avetisyan.egs.bookstore.controllers;
 
+import dev.avetisyan.egs.bookstore.auth.User;
+import dev.avetisyan.egs.bookstore.auth.UserRole;
 import dev.avetisyan.egs.bookstore.dtos.request.general.SortCriteria;
 import dev.avetisyan.egs.bookstore.dtos.response.general.ErrorCode;
 import dev.avetisyan.egs.bookstore.dtos.response.general.ErrorDto;
 import dev.avetisyan.egs.bookstore.dtos.response.general.ResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.constraints.NotNull;
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

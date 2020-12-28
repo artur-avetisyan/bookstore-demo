@@ -1,5 +1,6 @@
 package dev.avetisyan.egs.bookstore.services;
 
+import dev.avetisyan.egs.bookstore.auth.User;
 import dev.avetisyan.egs.bookstore.dtos.request.CommentRequestDto;
 import dev.avetisyan.egs.bookstore.dtos.request.general.PageCriteria;
 import dev.avetisyan.egs.bookstore.dtos.response.CommentResponseDto;
@@ -38,7 +39,7 @@ public class CommentService extends BaseService implements ICommentService {
     }
 
     @Override
-    public ResponseDto create(long bookId, CommentRequestDto body, long userId, boolean isAdmin) {
+    public ResponseDto create(long bookId, CommentRequestDto body, long userId) {
         CommentEntity comment = mapper.map(body, CommentEntity.class);
         comment.setBookId(bookId);
         comment.setCommenterId(userId);
@@ -75,14 +76,14 @@ public class CommentService extends BaseService implements ICommentService {
     }
 
     @Override
-    public ResponseDto delete(long bookId, long commentId, long userId, boolean isAdmin) {
+    public ResponseDto delete(long bookId, long commentId, User currentUser) {
         Optional<CommentEntity> result = commentRepository.findById(commentId);
         if (result.isEmpty()) return createNotFoundResponse();
 
         CommentEntity comment = result.get();
         if (comment.getBookId() != bookId) return createMismatchResponse();
 
-        if (!isAdmin && userId != comment.getCommenterId()) {
+        if (!currentUser.isAdmin() && currentUser.getUserId() != comment.getCommenterId()) {
             return ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD,
                     "Non-admin user can delete only his/her own comments."));
         }

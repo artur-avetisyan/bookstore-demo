@@ -17,6 +17,14 @@ public class User implements UserDetails {
         this.user = user;
     }
 
+    public long getUserId() {
+        return user.getId();
+    }
+
+    public boolean isAdmin() {
+        return UserRole.ADMIN.getName().equals(user.getRole().getName());
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         RoleEntity role = user.getRole();

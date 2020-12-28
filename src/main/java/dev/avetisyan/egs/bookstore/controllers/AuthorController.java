@@ -1,5 +1,6 @@
 package dev.avetisyan.egs.bookstore.controllers;
 
+import dev.avetisyan.egs.bookstore.auth.User;
 import dev.avetisyan.egs.bookstore.dtos.request.AuthorRequestDto;
 import dev.avetisyan.egs.bookstore.dtos.request.filters.AuthorFilter;
 import dev.avetisyan.egs.bookstore.dtos.request.general.PageCriteria;
@@ -13,8 +14,10 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
 import java.util.Collections;
@@ -45,16 +48,14 @@ public class AuthorController extends BaseController {
             notes = "Admin users create approved authors, while the other users " +
                     "have to wait for admin to approve the new author.")
     public ResponseEntity<ResponseDto> createAuthor(@Valid @RequestBody AuthorRequestDto body,
-                                                    BindingResult bindingResult) {
+                                                    BindingResult bindingResult,
+                                                    @ApiIgnore @AuthenticationPrincipal User currentUser) {
 
         ResponseEntity<ResponseDto> bindingError = getBindingErrorsIfExist(bindingResult,
                 Collections.singletonMap("fullName", ErrorCode.ERR_LE));
         if (bindingError != null) return bindingError;
 
-        // FIXME: check for admin role
-        boolean isAdmin = false;
-        ResponseDto result = authorService.create(body, isAdmin);
-
+        ResponseDto result = authorService.create(body, currentUser.isAdmin());
         return generateCreatedResponse(result);
     }
 
@@ -89,12 +90,10 @@ public class AuthorController extends BaseController {
     @ApiResponses(@ApiResponse(code = 403, message = "Non-admin users get this response " +
             "when the requested author has not been approved by admins yet, as they can " +
             "get only approved authors."))
-    public ResponseEntity<ResponseDto> getAuthorById(@PathVariable int id) {
+    public ResponseEntity<ResponseDto> getAuthorById(@PathVariable int id,
+                                                     @ApiIgnore @AuthenticationPrincipal User currentUser) {
 
-        // FIXME: user role check
-        boolean isAdmin = false;
-        ResponseDto result = authorService.findById(id, isAdmin);
-
+        ResponseDto result = authorService.findById(id, currentUser.isAdmin());
         return generateResponse(result);
     }
 
@@ -102,16 +101,13 @@ public class AuthorController extends BaseController {
     @ApiOperation(value = "Get all authors", notes = "Non-admin users can see only " +
             "approved authors, whereas admins can see all authors. Filtering with name and " +
             "approved status is available. This endpoint provides sorting and pagination.")
-    public ResponseEntity<ResponseDto> getAuthors(
+    public ResponseEntity<ResponseDto> getAuthors(@ApiIgnore @AuthenticationPrincipal User currentUser,
             AuthorFilter filter, PageCriteria pageCriteria, SortCriteria sortCriteria) {
 
         ResponseEntity<ResponseDto> sortingError = getSortingFieldErrorIfExists(sortCriteria, ALLOWED_SORT_FIELDS);
         if (sortingError != null) return sortingError;
 
-        // FIXME: user role check
-        boolean isAdmin = true;
-        ResponseDto result = authorService.getAuthors(filter, isAdmin, pageCriteria, sortCriteria);
-
+        ResponseDto result = authorService.getAuthors(filter, currentUser.isAdmin(), pageCriteria, sortCriteria);
         return generateResponse(result);
     }
 }

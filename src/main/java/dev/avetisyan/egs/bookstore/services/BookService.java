@@ -1,5 +1,6 @@
 package dev.avetisyan.egs.bookstore.services;
 
+import dev.avetisyan.egs.bookstore.auth.User;
 import dev.avetisyan.egs.bookstore.dtos.request.BookRequestDto;
 import dev.avetisyan.egs.bookstore.dtos.request.filters.BookFilter;
 import dev.avetisyan.egs.bookstore.dtos.request.general.PageCriteria;
@@ -38,17 +39,17 @@ public class BookService extends BaseService implements IBookService {
     }
 
     @Override
-    public ResponseDto create(BookRequestDto dto, long creatorId, boolean isApproved) {
+    public ResponseDto create(BookRequestDto dto, User currentUser) {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         BookEntity book = mapper.map(dto, BookEntity.class);
-        book.setCreatorId(creatorId);
-        book.setIsApproved(isApproved);
+        book.setCreatorId(currentUser.getUserId());
+        book.setIsApproved(currentUser.isAdmin());
 
         return tryToSaveBook(book);
     }
 
     @Override
-    public ResponseDto update(long id, BookRequestDto dto, long currentUserId, boolean isAdmin) {
+    public ResponseDto update(long id, BookRequestDto dto, User currentUser) {
         Optional<BookEntity> result = bookRepository.findById(id);
 
         if (result.isEmpty()) {
@@ -56,7 +57,7 @@ public class BookService extends BaseService implements IBookService {
         }
 
         BookEntity book = result.get();
-        if (!isAdmin && book.getCreatorId() != currentUserId) {
+        if (!currentUser.isAdmin() && book.getCreatorId() != currentUser.getUserId()) {
             return ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD,
                     "Non-admin users can update only books created by themselves."));
         }
@@ -83,13 +84,13 @@ public class BookService extends BaseService implements IBookService {
     }
 
     @Override
-    public ResponseDto findById(long id, long currentUserId, boolean isAdmin) {
+    public ResponseDto findById(long id, User currentUser) {
         Optional<BookEntity> result = bookRepository.findById(id);
 
         if (result.isEmpty() || result.get().isDeleted()) return createNotFoundResponse();
 
         BookEntity book = result.get();
-        if (!isAdmin && !book.getIsApproved() && book.getCreatorId() != currentUserId) {
+        if (!currentUser.isAdmin() && !book.getIsApproved() && book.getCreatorId() != currentUser.getUserId()) {
             return ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD, "Non-admin user can't get the books " +
                     "created by the other users that have not been approved yet."));
         }
@@ -98,16 +99,16 @@ public class BookService extends BaseService implements IBookService {
     }
 
     @Override
-    public ResponseDto getBooks(BookFilter filter, boolean isAdmin,
-                                long userId, PageCriteria pageCriteria, SortCriteria sortCriteria) {
+    public ResponseDto getBooks(BookFilter filter, User currentUser,
+                                PageCriteria pageCriteria, SortCriteria sortCriteria) {
 
-        if (!isAdmin && filter.getCreatorId() != userId &&
+        if (!currentUser.isAdmin() && filter.getCreatorId() != currentUser.getUserId() &&
                 filter.getApproved() != null && filter.getApproved()) {
             return ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD, "Only admin users " +
                     "can get not approved books created by other users."));
         }
 
-        if (filter.getCreatorId() == null && !isAdmin) filter.setCreatorId(userId);
+        if (filter.getCreatorId() == null && !currentUser.isAdmin()) filter.setCreatorId(currentUser.getUserId());
 
         if (sortCriteria.getSortField() == null || sortCriteria.getSortField().isEmpty()) {
             sortCriteria.setSortField("name");
@@ -144,13 +145,13 @@ public class BookService extends BaseService implements IBookService {
     }
 
     @Override
-    public ResponseDto delete(long bookId, long userId, boolean isAdmin) {
+    public ResponseDto delete(long bookId, User currentUser) {
         Optional<BookEntity> result = bookRepository.findById(bookId);
 
         if (result.isEmpty()) return createNotFoundResponse();
 
         BookEntity book = result.get();
-        if (!isAdmin && book.getCreatorId() != userId) {
+        if (!currentUser.isAdmin() && book.getCreatorId() != currentUser.getUserId()) {
             return ResponseDto.error(new ErrorDto(ErrorCode.ERR_AD, "Only admin users " +
                     "can delete the books created by the other users."));
         }
